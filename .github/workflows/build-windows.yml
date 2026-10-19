@@ -1,0 +1,44 @@
+name: Build Windows EXE
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-windows-exe:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Compile Java sources
+        shell: cmd
+        run: |
+          mkdir target\classes
+          javac -encoding UTF-8 -d target\classes -sourcepath src\main\java src\main\java\org\martin\Main.java
+
+      - name: Create executable with jpackage
+        shell: cmd
+        run: |
+          jpackage ^
+            --type app-image ^
+            --name APChemCalculator ^
+            --input target\classes ^
+            --main-jar . ^
+            --main-class org.martin.Main ^
+            --dest target\exe-output ^
+            --java-options "-Dfile.encoding=UTF-8" ^
+            --java-options "-Dstdout.encoding=UTF-8"
+
+      - name: Upload EXE artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: APChemCalculator-Windows
+          path: target/exe-output/
